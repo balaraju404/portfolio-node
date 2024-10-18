@@ -1,4 +1,7 @@
 global.TBL_USERS = "users"
+global.TBL_PORTFOLIOS = "portfolios"
+
+
 global.TBL_LOGIN_ROLES = "login_roles"
 global.TBL_RESTAURANTS = "restaurants"
 global.TBL_RESTAURANT_USERS = "restaurant_users"
