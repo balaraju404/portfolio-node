@@ -2,55 +2,76 @@ const { getDb } = require('../../db-conn/db-conn');
 
 exports.create = async (reqParams) => {
  try {
-  const login_name = reqParams['login_name'];
-  const user_name = reqParams['user_name'];
-  const password = reqParams['password'];
-  const role_id = reqParams['role_id'];
-  const userExists = await checkUser(login_name);
-  if (userExists) {
-   return { status: false, msg: 'User already exists' };
-  }
-  const insertRec = { 'fname': '', 'lname': '', 'user_name': user_name, 'login_name': login_name, 'password': password, 'role_id': role_id, 'email': '', 'mobile': '', 'created_by': 'system', 'created_date': new Date(), 'modified_date': '', 'status': 1 }
-  const db = getDb();
-  const collection = db.collection(TBL_USERS)
-  const result = await collection.insertOne(insertRec)
-  return { status: true, msg: 'User Created Successfull', insertedId: result['insertedId'] }
- } catch (error) {
-  throw error
- }
-}
-exports.details = async (reqParams) => {
- try {
-  const login_name = reqParams['login_name'] || '';
-  const user_name = reqParams['user_name'] || '';
-  const role_id = reqParams['role_id'] || 0;
+  console.log(reqParams);
 
-  const query = {};
-  if (login_name.length > 0) {
-   query.login_name = login_name;
-  }
-  if (user_name.length > 0) {
-   query.user_name = user_name;
-  }
-  if (role_id > 0) {
-   query.role_id = role_id;
+  const { portfolio_name } = reqParams;
+
+  if (!portfolio_name) {
+   return { status: false, msg: 'Portfolio name is required' };
   }
 
+  const recExists = await checkName(portfolio_name);
+  if (recExists) {
+   return { status: false, msg: 'Portfolio name already exists' };
+  }
+
+  const insertRec = {
+   ...reqParams,
+   created_by: 'system',
+   created_date: new Date(),
+   modified_date: null,
+   is_private: 0,
+   status: 1
+  };
+
   const db = getDb();
-  const collection = db.collection(TBL_USERS);
-  const result = await collection.find(query).sort({ login_name: 1 }).toArray();
-  result.forEach(e => {
-   e['user_id'] = e['_id']
-  });
-  return { status: true, data: result };
+  const collection = db.collection(TBL_PORTFOLIOS);
+  const result = await collection.insertOne(insertRec);
+
+  return { status: true, msg: 'Portfolio Created Successfully', insertedId: result.insertedId };
  } catch (error) {
-  throw error;
+  return { status: false, msg: error.message || 'An error occurred' }; // Consistent error handling
  }
 };
 
-async function checkUser(login_name) {
+exports.details = async (reqParams) => {
+ try {
+  const userId = reqParams.user_id || '';
+  const portfolio_name = reqParams['portfolio_name'] || ''
+  const portfolio_id = reqParams['portfolio_id'] || ''
+
+
+  const query = {};
+
+  if (userId) {
+   query.user_id = userId; // Directly assign userId if it exists
+  }
+
+  if (portfolio_name) {
+   query.portfolio_name = portfolio_name; // Directly assign portfolio_name if it exists
+  }
+
+  if (portfolio_id) {
+   query._id = portfolio_id; // Directly assign portfolio_id if it exists
+  }
+
+  const db = getDb();
+  const collection = db.collection(TBL_PORTFOLIOS);
+  const result = await collection.find(query).sort({ login_name: 1 }).toArray();
+
+  result.forEach(e => {
+   e.portfolio_id = e._id; // Consider using a different field name to avoid confusion with the original
+  });
+
+  return { status: true, data: result };
+ } catch (error) {
+  return { status: false, msg: error.message || 'An error occurred' }; // Consistent error handling
+ }
+};
+
+async function checkName(portfolio_name) {
  const db = getDb();
- const collection = db.collection(TBL_USERS);
- const user = await collection.findOne({ login_name });
+ const collection = db.collection(TBL_PORTFOLIOS);
+ const user = await collection.findOne({ portfolio_name });
  return user !== null;
 }

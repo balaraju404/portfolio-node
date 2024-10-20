@@ -6,6 +6,6 @@ const portfolio = require('./portfolio/portfolio')
 
 routes.use('/login', login);
 routes.use('/user', user)
-routes.use('portfolio', portfolio)
+routes.use('/portfolio', portfolio)
 
 module.exports = routes;
