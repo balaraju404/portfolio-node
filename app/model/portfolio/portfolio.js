@@ -3,10 +3,12 @@ const { ObjectId } = require('mongodb');
 
 exports.create = async (reqParams) => {
  try {
-  console.log(reqParams);
-
   const { portfolio_name } = reqParams;
+  const portfolio_img = images[0]['buffer'] || null;
 
+  if (portfolio_img != null) {
+   reqParams['portfolio_img'] = portfolio_img
+  }
   if (!portfolio_name) {
    return { status: false, msg: 'Portfolio name is required' };
   }
@@ -31,7 +33,7 @@ exports.create = async (reqParams) => {
 
   return { status: true, msg: 'Portfolio Created Successfully', insertedId: result.insertedId };
  } catch (error) {
-  return { status: false, msg: error.message || 'An error occurred' }; 
+  return { status: false, msg: error.message || 'An error occurred' };
  }
 };
 
@@ -52,12 +54,16 @@ exports.details = async (reqParams) => {
    query._id = new ObjectId(portfolio_id);
   }
 
-  const db = getDb();  
+  const db = getDb();
   const collection = db.collection(TBL_PORTFOLIOS);
   const result = await collection.find(query).sort({ portfolio_name: 1 }).toArray();
 
   result.forEach(e => {
    e.portfolio_id = e._id;
+   if (e['product_img']) {
+    const base64Image = e['product_img'].toString('base64');
+    obj['product_img'] = `data:image/png;base64,${base64Image}`;
+   }
   });
 
   return { status: true, data: result };

@@ -1,7 +1,11 @@
 const routes = require("express").Router();
 const portfolioController = require('../../controller/portfolio/portfolio')
+const multer = require('multer')
 
-routes.post('/create', async (req, res, next) => {
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+routes.post('/create', upload.array('images'), async (req, res, next) => {
  try {
   await portfolioController.create(req, res, next);
  } catch (error) {
