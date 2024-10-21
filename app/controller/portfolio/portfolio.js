@@ -1,9 +1,9 @@
 const portfolioModel = require('../../model/portfolio/portfolio')
 exports.create = async (req, res, next) => {
  try {
-  const reqParams = req['body'] || {}
+  const reqParams = req['body'] || {}  
   const images = req['files'] || {}
-  const result = await portfolioModel.create(reqParams);
+  const result = await portfolioModel.create(reqParams,images);
   if (result['insertedId']) {
    res.status(200).json({ status: result['status'], msg: result['msg'], insertedId: result['insertedId'] })
   } else {

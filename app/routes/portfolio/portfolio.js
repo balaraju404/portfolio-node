@@ -5,7 +5,7 @@ const multer = require('multer')
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-routes.post('/create', upload.array('images'), async (req, res, next) => {
+routes.post('/create', async (req, res, next) => {
  try {
   await portfolioController.create(req, res, next);
  } catch (error) {

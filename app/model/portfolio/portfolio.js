@@ -1,10 +1,10 @@
 const { getDb } = require('../../db-conn/db-conn');
 const { ObjectId } = require('mongodb');
 
-exports.create = async (reqParams) => {
+exports.create = async (reqParams,images) => {
  try {
   const { portfolio_name } = reqParams;
-  const portfolio_img = images[0]['buffer'] || null;
+  const portfolio_img = images[0]?.['buffer'] || null;
 
   if (portfolio_img != null) {
    reqParams['portfolio_img'] = portfolio_img
