@@ -1,87 +1,44 @@
-// Load environment variables
-require('dotenv').config();
-require('./app/utils/config'); // Custom configurations
-require('./app/utils/constants'); // Constants
+// Environment
+require("dotenv").config()
 
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');
-const http = require('http');
-const multer = require('multer'); // Import multer for file uploads
-const { mongoConnect } = require('./app/db-conn/db-conn'); // MongoDB connection function
-const routes = require('./app/routes/index'); // Import routes
+// App config and constants
+require("./app/utils/config")
+require("./app/utils/constants")
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// Dependencies
+const express = require("express")
+const cors = require("cors")
+const { connectDB } = require("./app/utils/mongo-conn")
 
-// Middleware to parse JSON bodies
-app.use(express.json());
+// Create Express app
+const app = express()
 
-// Set up multer for file uploads
-const upload = multer({ storage: multer.memoryStorage() });
+// Middleware
+app.use(express.json())
 
-// Cloudinary upload endpoint
-app.post('/upload', upload.single('file'), async (req, res) => {
- const file = req.file;
- const formData = new FormData();
- formData.append('file', file.buffer.toString('base64'));
-
- try {
-  const response = await axios.post(
-   `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/upload`,
-   formData,
-   {
-    headers: {
-     ...formData.getHeaders(),
-    },
-   }
-  );
-  res.status(200).json({ url: response.data.secure_url });
- } catch (error) {
-  console.error(error);
-  res.status(500).send('Upload failed');
- }
-});
-
-// Define allowed origins from config
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
-
-// Set up CORS for the Express server
+// CORS configuration
+const allowedOrigins = (ALLOWED_ORIGINS || "").split(",").filter(Boolean)
 app.use(cors({
  origin: (origin, callback) => {
-  if (allowedOrigins.includes(origin) || !origin) {
-   callback(null, true);
-  } else {
-   callback(new Error('Not allowed by CORS'));
+  if (allowedOrigins.includes(origin) || !origin) callback(null, true)
+  else callback(new Error("Not allowed by CORS"))
+ }
+}))
+
+// Routes
+const routes = require("./app/routes")
+app.use("/", routes)
+
+ // Start server and connect to DB
+ (async () => {
+  try {
+   await connectDB()
+   app.listen(PORT, (err) => {
+    if (err) console.log("Error on creating server")
+    console.log("Server running on " + PORT)
+   })
+  } catch (err) {
+   console.error("Failed to connect to DB", err)
+   process.exit(1)
   }
- },
- methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
- allowedHeaders: ['Content-Type'],
-}));
-
-// Set up routes
-app.use('/api', routes);
-
-// Connect to the database and start the server
-mongoConnect(() => {
- console.log('Database connected successfully.');
-
- // Simple route for testing
- app.get('/', (req, res) => {
-  res.json({ message: 'Hello World', dbStatus: 'Connected' });
- });
-
- // Create server
- const appServer = http.createServer(app);
-
- // Start server
- appServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
- });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
- console.error(err.stack);
- res.status(500).json({ error: 'Something went wrong!' });
-});
+ })()

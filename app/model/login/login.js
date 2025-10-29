@@ -1,26 +1,45 @@
-const { getDb } = require('../../db-conn/db-conn');
+const mongoHelper = require("../../helpers/mongo-helper")
+const pwdHashHelper = require("../../helpers/pwd-hashing")
+const helper = require("../../helpers/helper")
 
-exports.check = async (reqParams) => {
+exports.loginCheck = async (reqParams) => {
  try {
-  const db = getDb();
-  const login_name = reqParams.login_name;
-  const password = reqParams.login_password;
+  const { login_name, password } = reqParams
 
-  const collection = db.collection(TBL_USERS);
-  const result = await collection.findOne({ login_name });
-  if (result) {
-   if (result.password === password) {
-    delete result['password']
-    result['user_id'] = result['_id']
-    return { status: true, msg: 'Login successful', data: result };
-   } else {
-    return { status: false, msg: 'Invalid password', data: {} };
-   }
-  } else {
-   return { status: false, msg: 'Invalid loginname', data: {} };
-  }
+  const pipeline = [
+   { $match: { login_name: login_name } },
+   { $project: { user_id: "$_id", _id: 0 } }
+  ]
+  const result = await mongoHelper.getOne(TBL_USERS, pipeline)
+
+  if (Object.keys(result).length == 0) throw Error("Invalid loginname")
+  const checkPwd = pwdHashHelper.checkPassword(password, result["password"])
+  if (!checkPwd) throw Error("Invalid password")
+  delete result["password"]
+  return result
  } catch (error) {
-  console.error('Database error:', error);
-  throw error;
+  throw error
  }
-};
+}
+
+exports.createUser = async (reqParams) => {
+ try {
+  const { fname, lname, login_name, password } = reqParams
+
+  const checkLoginName = await helper.checkLoginName(login_name)
+  if (!checkLoginName) throw Error("Login name already exists")
+
+  const insertObj = {
+   fname: fname,
+   lname: lname,
+   login_name: login_name,
+   password: pwdHashHelper.hashPassword(password),
+   is_admin: 0,
+   created_at: new Date()
+  }
+  const result = await mongoHelper.insertOne(TBL_USERS, insertObj)
+  return result
+ } catch (error) {
+  throw error
+ }
+}

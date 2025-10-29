@@ -1,21 +1,21 @@
-const loginModel = require('../../model/login/login');
+const loginModel = require("../../model/login/login")
 
-exports.check = async (req, res, next) => {
+exports.loginCheck = async (req, res, next) => {
  try {
-  const reqParams = req.body || {};
-  const result = await loginModel.check(reqParams);
-
-  res.status(result.status ? 200 : 401).json({
-   status: result['status'],
-   msg: result['msg'],
-   data: result['data']
-  });
+  const reqParams = req.body || {}
+  const result = await loginModel.loginCheck(reqParams)
+  res.status(SUCCESS_CODE).json({ status: true, msg: "Login Successfull", data: result })
  } catch (error) {
-  console.error('Error during login check:', error);
-  res.status(500).json({
-   status: false,
-   msg: 'Internal Server Error',
-   error: error.message
-  });
+  next(error)
  }
-};
+}
+
+exports.createUser = async (req, res, next) => {
+ try {
+  const reqParams = req.body || {}
+  const result = await loginModel.createUser(reqParams)
+  res.status(SUCCESS_CODE).json({ status: true, msg: "User Created Successfully" })
+ } catch (error) {
+  next(error)
+ }
+}

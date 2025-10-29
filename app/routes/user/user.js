@@ -1,19 +1,17 @@
-const routes = require("express").Router();
-const userController = require('../../controller/user/user')
+const routes = require("express").Router()
+const { check, validationResult } = require("express-validator")
+const userController = require("../../controller/user/user")
 
-routes.post('/create', async (req, res, next) => {
- try {
-  await userController.create(req, res, next);
- } catch (error) {
-  console.error(error);
- }
-})
-routes.post('/getUsers', async (req, res, next) => {
- try {
-  await userController.details(req, res, next);
- } catch (error) {
-  console.error(error);
- }
+routes.post("/update", [
+ check("user_id", "Invalid user id").isMongoId(),
+ check("fname", "Invalid first name").optional().trim().isString().isLength({ min: 3 }),
+ check("lname", "Invalid last name").optional().trim().isString().isLength({ min: 3 }),
+ check("login_name", "Invalid login name").optional().trim().isString().isLength({ min: 6 }),
+ check("password", "Invalid login password").optional().trim().isString().isLength({ min: 6 })
+], (req, res, next) => {
+ const errors = validationResult.errors()
+ if (errors) throw errors
+ userController.updateUser(req, res, next)
 })
 
 module.exports = routes

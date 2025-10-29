@@ -1,24 +1,12 @@
-const routes = require("express").Router();
-const portfolioController = require('../../controller/portfolio/portfolio')
-const multer = require('multer')
+const routes = require("express").Router()
+const portfolioController = require("../../controller/portfolio/portfolio")
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-routes.post('/create', async (req, res, next) => {
- try {
-  await portfolioController.create(req, res, next);
- } catch (error) {
-  console.error(error);
- }
-})
-routes.post('/getAll', async (req, res, next) => {
- try {
-  await portfolioController.details(req, res, next);
- } catch (error) {
-  console.error(error);
- }
+routes.post("/create", (req, res, next) => {
+ portfolioController.create(req, res, next)
 })
 
+routes.post("/getAll", (req, res, next) => {
+ portfolioController.details(req, res, next)
+})
 
 module.exports = routes
