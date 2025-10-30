@@ -13,7 +13,7 @@ exports.details = async (req, res, next) => {
  try {
   const reqParams = req["body"] || {}
   const result = await portfolioModel.details(reqParams)
-  res.status(SUCCESS_CODE).json({ status: true, data: result["data"] })
+  res.status(SUCCESS_CODE).json({ status: true, data: result })
  } catch (error) {
   next(error)
  }

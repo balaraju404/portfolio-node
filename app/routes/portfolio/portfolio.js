@@ -2,19 +2,7 @@ const routes = require("express").Router()
 const { body, validationResult } = require("express-validator")
 const portfolioController = require("../../controller/portfolio/portfolio")
 
-routes.post("/create", portfolioValidationRules, (req, res, next) => {
- const errors = validationResult(req)
- if (!errors.isEmpty()) throw errors
- portfolioController.create(req, res, next)
-})
-
-routes.post("/getAll", (req, res, next) => {
- portfolioController.details(req, res, next)
-})
-
-module.exports = routes
-
-export const portfolioValidationRules = [
+const portfolioValidationRules = [
  body("user_id").isMongoId().withMessage("Invalid User Id"),
  body("portfolio_name").trim().isString().isLength({ min: 6 }).withMessage("Portfolio name must be at least 6 characters long"),
 
@@ -46,6 +34,18 @@ export const portfolioValidationRules = [
  body("contact_info.mobile_no").if(body("contact_info").exists()).trim().isString().isLength({ min: 10, max: 15 }).withMessage("Mobile number must be a valid phone number"),
  body("contact_info.alternative_number").if(body("contact_info").exists()).optional().trim().isString().isLength({ min: 10, max: 15 }).withMessage("Alternative number must be a valid phone number"),
  body("contact_info.email").if(body("contact_info").exists()).isEmail().withMessage("Email must be a valid email"),
- body("contact_info.alternative_email").if(body("contact_info").exists()).isEmail().withMessage("Alternative email must be a valid email"),
- body("contact_info.address").if(body("contact_info").exists()).trim().isString().isLength({ min: 10, max: 15 }).withMessage("Invalid Address"),
+ body("contact_info.alternative_email").if(body("contact_info").exists()).optional().isEmail().withMessage("Alternative email must be a valid email"),
+ body("contact_info.address").if(body("contact_info").exists()).trim().isString().isLength({ min: 10 }).withMessage("Invalid Address"),
 ]
+
+routes.post("/create", portfolioValidationRules, (req, res, next) => {
+ const errors = validationResult(req)
+ if (!errors.isEmpty()) return res.status(VALIDATION_ERROR_CODE).json({ status: false, errors: errors })
+ portfolioController.create(req, res, next)
+})
+
+routes.post("/get", [], (req, res, next) => {
+ portfolioController.details(req, res, next)
+})
+
+module.exports = routes

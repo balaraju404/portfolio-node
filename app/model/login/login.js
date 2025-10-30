@@ -8,12 +8,13 @@ exports.loginCheck = async (reqParams) => {
 
   const pipeline = [
    { $match: { login_name: login_name } },
-   { $project: { user_id: "$_id", _id: 0 } }
+   { $addFields: { user_id: "$_id" } },
+   { $project: { _id: 0 } }
   ]
   const result = await mongoHelper.getOne(TBL_USERS, pipeline)
 
   if (Object.keys(result).length == 0) throw Error("Invalid loginname")
-  const checkPwd = pwdHashHelper.checkPassword(password, result["password"])
+  const checkPwd = await pwdHashHelper.checkPassword(password, result["password"])
   if (!checkPwd) throw Error("Invalid password")
   delete result["password"]
   return result
@@ -29,11 +30,13 @@ exports.createUser = async (reqParams) => {
   const checkLoginName = await helper.checkLoginName(login_name)
   if (!checkLoginName) throw Error("Login name already exists")
 
+  const hashPwd = await pwdHashHelper.hashPassword(password)
+
   const insertObj = {
    fname: fname,
    lname: lname,
    login_name: login_name,
-   password: pwdHashHelper.hashPassword(password),
+   password: hashPwd,
    is_admin: 0,
    created_at: new Date()
   }

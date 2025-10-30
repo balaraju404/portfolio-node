@@ -34,6 +34,7 @@ exports.details = async (reqParams) => {
 
   if ("user_id" in reqParams) whr["user_id"] = getObjectId(reqParams["user_id"])
   if ("portfolio_id" in reqParams) whr["_id"] = getObjectId(reqParams["portfolio_id"])
+  if ("portfolio_name" in reqParams) whr["portfolio_name"] = reqParams["portfolio_name"]
   if ("is_private" in reqParams) whr["is_private"] = reqParams["is_private"]
   if ("status" in reqParams) whr["status"] = reqParams["status"]
 

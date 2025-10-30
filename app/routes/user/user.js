@@ -10,7 +10,7 @@ routes.post("/update", [
  check("password", "Invalid login password").optional().trim().isString().isLength({ min: 6 })
 ], (req, res, next) => {
  const errors = validationResult(req)
- if (!errors.isEmpty()) throw errors
+ if (!errors.isEmpty()) return res.status(VALIDATION_ERROR_CODE).json({ status: false, errors: errors })
  userController.updateUser(req, res, next)
 })
 
