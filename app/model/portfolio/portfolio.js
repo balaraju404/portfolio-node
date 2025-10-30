@@ -1,80 +1,49 @@
-const { getDb } = require('../../db-conn/db-conn');
-const { ObjectId } = require('mongodb');
+const mongoHelper = require("../../helpers/mongo-helper")
+const helper = require("../../helpers/helper")
+const { getObjectId } = require("../../utils/mongo-conn")
 
-exports.create = async (reqParams,images) => {
+exports.create = async (reqParams) => {
  try {
-  const { portfolio_name } = reqParams;
-  const portfolio_img = images[0]?.['buffer'] || null;
+  const { user_id, portfolio_name, user_info } = reqParams
+  if (!helper.checkPortfolioName(portfolio_name)) throw Error("Portfolio name already exists")
 
-  if (portfolio_img != null) {
-   reqParams['portfolio_img'] = portfolio_img
-  }
-  if (!portfolio_name) {
-   return { status: false, msg: 'Portfolio name is required' };
-  }
-
-  const recExists = await checkName(portfolio_name);
-  if (recExists) {
-   return { status: false, msg: 'Portfolio name already exists' };
-  }
-
-  const insertRec = {
-   ...reqParams,
-   created_by: 'system',
-   created_date: new Date(),
-   modified_date: null,
+  const insertDoc = {
+   user_id: user_id,
+   portfolio_name: portfolio_name,
+   user_info: user_info,
    is_private: 0,
-   status: 1
-  };
+   status: 1,
+   created_at: new Date()
+  }
 
-  const db = getDb();
-  const collection = db.collection(TBL_PORTFOLIOS);
-  const result = await collection.insertOne(insertRec);
+  if ("services" in reqParams) insertDoc["services"] = reqParams["services"]
+  if ("projects" in reqParams) insertDoc["projects"] = reqParams["projects"]
+  if ("skills" in reqParams) insertDoc["skills"] = reqParams["skills"]
+  if ("contact_info" in reqParams) insertDoc["contact_info"] = reqParams["contact_info"]
 
-  return { status: true, msg: 'Portfolio Created Successfully', insertedId: result.insertedId };
+  const result = await mongoHelper.insertOne(TBL_PORTFOLIOS, insertDoc)
+  return result
  } catch (error) {
-  return { status: false, msg: error.message || 'An error occurred' };
+  throw error
  }
-};
+}
 
 exports.details = async (reqParams) => {
  try {
-  const userId = reqParams.user_id || '';
-  const portfolio_name = reqParams['portfolio_name'] || ''
-  const portfolio_id = reqParams['portfolio_id'] || ''
+  const whr = { status: 1 }
 
-  const query = {};
-  if (userId) {
-   query.user_id = userId;
-  }
-  if (portfolio_name) {
-   query.portfolio_name = portfolio_name;
-  }
-  if (portfolio_id) {
-   query._id = new ObjectId(portfolio_id);
-  }
+  if ("user_id" in reqParams) whr["user_id"] = getObjectId(reqParams["user_id"])
+  if ("portfolio_id" in reqParams) whr["_id"] = getObjectId(reqParams["portfolio_id"])
+  if ("is_private" in reqParams) whr["is_private"] = reqParams["is_private"]
+  if ("status" in reqParams) whr["status"] = reqParams["status"]
 
-  const db = getDb();
-  const collection = db.collection(TBL_PORTFOLIOS);
-  const result = await collection.find(query).sort({ portfolio_name: 1 }).toArray();
+  const pipeline = [
+   { $match: whr }
+  ]
 
-  result.forEach(e => {
-   e.portfolio_id = e._id;
-   if (e['product_img']) {
-    const base64Image = e['product_img'].toString('base64');
-    obj['product_img'] = `data:image/png;base64,${base64Image}`;
-   }
-  });
-
-  return { status: true, data: result };
+  const result = await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
+  return result
  } catch (error) {
-  return { status: false, msg: error.message || 'An error occurred' };
+  throw error
  }
-};
-
-async function checkName(portfolio_name) {
- const db = getDb();
- const collection = db.collection(TBL_PORTFOLIOS);
- const user = await collection.findOne({ portfolio_name });
- return user !== null;
 }

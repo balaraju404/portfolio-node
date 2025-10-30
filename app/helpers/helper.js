@@ -8,3 +8,12 @@ exports.checkLoginName = async (loginname) => {
   throw error
  }
 }
+
+exports.checkPortfolioName = async (portfolio_name) => {
+ try {
+  const result = await mongoHelper.getOne(TBL_PORTFOLIOS, [{ $match: { portfolio_name: portfolio_name } }])
+  return Object.keys(result).length == 0
+ } catch (error) {
+  throw error
+ }
+}

@@ -9,8 +9,8 @@ routes.post("/update", [
  check("login_name", "Invalid login name").optional().trim().isString().isLength({ min: 6 }),
  check("password", "Invalid login password").optional().trim().isString().isLength({ min: 6 })
 ], (req, res, next) => {
- const errors = validationResult.errors()
- if (errors) throw errors
+ const errors = validationResult(req)
+ if (!errors.isEmpty()) throw errors
  userController.updateUser(req, res, next)
 })
 

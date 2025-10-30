@@ -1,28 +1,20 @@
-const portfolioModel = require('../../model/portfolio/portfolio')
+const portfolioModel = require("../../model/portfolio/portfolio")
+
 exports.create = async (req, res, next) => {
  try {
-  const reqParams = req['body'] || {}  
-  const images = req['files'] || {}
-  const result = await portfolioModel.create(reqParams,images);
-  if (result['insertedId']) {
-   res.status(200).json({ status: result['status'], msg: result['msg'], insertedId: result['insertedId'] })
-  } else {
-   res.status(200).json({ status: result['status'], msg: result['msg'] })
-  }
+  const reqParams = req["body"] || {}
+  const result = await portfolioModel.create(reqParams)
+  res.status(SUCCESS_CODE).json({ status: true, msg: "Portfolio created successfully", id: result["insertedId"] })
  } catch (error) {
-  res.status(500).json({ status: false, msg: 'Internal server error', error: error })
+  next(error)
  }
 }
 exports.details = async (req, res, next) => {
  try {
-  const reqParams = req['body'] || {}
-  const result = await portfolioModel.details(reqParams);
-  if (result['data']) {
-   res.status(200).json({ status: result['status'], data: result['data'] })
-  } else {
-   res.status(200).json({ status: result['status'], msg: result['msg'] })
-  }
+  const reqParams = req["body"] || {}
+  const result = await portfolioModel.details(reqParams)
+  res.status(SUCCESS_CODE).json({ status: true, data: result["data"] })
  } catch (error) {
-  res.status(500).json({ status: false, msg: 'Internal server error', error: error })
+  next(error)
  }
 }
