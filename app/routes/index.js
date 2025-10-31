@@ -7,4 +7,8 @@ routes.use("/login", login)
 routes.use("/user", user)
 routes.use("/portfolio", portfolio)
 
+routes.get("/", (req, res, next) => {
+ res.status(SUCCESS_CODE).json({ status: true, msg: "Server running" })
+})
+
 module.exports = routes
