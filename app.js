@@ -9,6 +9,7 @@ require("./app/utils/constants")
 const express = require("express")
 const cors = require("cors")
 const { connectDB } = require("./app/utils/mongo-conn")
+const { errorHandler } = require("./app/helpers/errorHandler")
 
 // Create Express app
 const app = express()
@@ -28,6 +29,7 @@ app.use(cors({
 // Routes
 const routes = require("./app/routes")
 app.use("/", routes)
+app.use(errorHandler)
 
 app.listen(PORT, async (err) => {
  await connectDB()
