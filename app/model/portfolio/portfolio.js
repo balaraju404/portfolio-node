@@ -8,7 +8,7 @@ exports.create = async (reqParams) => {
   if (!helper.checkPortfolioName(portfolio_name)) throw Error("Portfolio name already exists")
 
   const insertDoc = {
-   user_id: user_id,
+   user_id: getObjectId(user_id),
    portfolio_name: portfolio_name,
    user_info: user_info,
    is_private: 0,
@@ -22,6 +22,55 @@ exports.create = async (reqParams) => {
   if ("contact_info" in reqParams) insertDoc["contact_info"] = reqParams["contact_info"]
 
   const result = await mongoHelper.insertOne(TBL_PORTFOLIOS, insertDoc)
+  return result
+ } catch (error) {
+  throw error
+ }
+}
+
+exports.list = async (reqParams) => {
+ try {
+  const whr = { status: 1 }
+
+  if ("user_id" in reqParams) whr["user_id"] = getObjectId(reqParams["user_id"])
+  if ("portfolio_id" in reqParams) whr["_id"] = getObjectId(reqParams["portfolio_id"])
+  if ("portfolio_name" in reqParams) whr["portfolio_name"] = reqParams["portfolio_name"]
+  if ("is_private" in reqParams) whr["is_private"] = reqParams["is_private"]
+  if ("status" in reqParams) whr["status"] = reqParams["status"]
+
+  const pipeline = [
+   { $match: whr },
+
+   {
+    $project: {
+     _id: 1,
+     portfolio_name: 1,
+     user_info: {
+      name: 1,
+      role: 1,
+      img: 1,
+      about: { $substr: ["$user_info.about", 0, 100] }
+     },
+     contact_info: { address: 1 },
+     projects_count: { $size: "$projects" },
+     services_count: { $size: "$services" },
+     skills: {
+      $slice: [
+       {
+        $reduce: {
+         input: "$projects.teck_stack.skills",
+         initialValue: [],
+         in: { $concatArrays: ["$$value", "$$this"] }
+        }
+       },
+       5
+      ]
+     }
+    }
+   }
+  ]
+
+  const result = await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
   return result
  } catch (error) {
   throw error

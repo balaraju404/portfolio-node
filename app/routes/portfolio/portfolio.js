@@ -44,7 +44,11 @@ routes.post("/create", portfolioValidationRules, (req, res, next) => {
  portfolioController.create(req, res, next)
 })
 
-routes.post("/get", [], (req, res, next) => {
+routes.post("/list", [], (req, res, next) => {
+ portfolioController.list(req, res, next)
+})
+
+routes.post("/details", [], (req, res, next) => {
  portfolioController.details(req, res, next)
 })
 

@@ -9,6 +9,17 @@ exports.create = async (req, res, next) => {
   next(error)
  }
 }
+
+exports.list = async (req, res, next) => {
+ try {
+  const reqParams = req["body"] || {}
+  const result = await portfolioModel.list(reqParams)
+  res.status(SUCCESS_CODE).json({ status: true, data: result })
+ } catch (error) {
+  next(error)
+ }
+}
+
 exports.details = async (req, res, next) => {
  try {
   const reqParams = req["body"] || {}
