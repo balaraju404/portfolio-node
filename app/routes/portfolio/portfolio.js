@@ -25,9 +25,9 @@ const portfolioValidationRules = [
  body("projects.*.id").if(body("services").exists()).isInt({ gt: 0 }).withMessage("project id must be a integer"),
  body("projects.*.title").if(body("projects").exists()).trim().isString().withMessage("project title must be a string"),
  body("projects.*.description").if(body("projects").exists()).trim().isString().withMessage("project description must be a string"),
- body("projects.*.teck_stack").if(body("projects").exists()).optional().isArray().withMessage("teck_stack must be an array if provided"),
- body("projects.*.teck_stack.*.cat_name").if(body("projects").exists()).trim().isString().withMessage("category name must be a string"),
- body("projects.*.teck_stack.*.skills").if(body("projects").exists()).isArray().withMessage("skills must be an array"),
+ body("projects.*.tech_stack").if(body("projects").exists()).optional().isArray().withMessage("tech_stack must be an array if provided"),
+ body("projects.*.tech_stack.*.cat_name").if(body("projects").exists()).trim().isString().withMessage("category name must be a string"),
+ body("projects.*.tech_stack.*.skills").if(body("projects").exists()).isArray().withMessage("skills must be an array"),
 
  // --- Contact Info ---
  body("contact_info").optional().isObject().withMessage("contact_info must be an object if provided"),
