@@ -58,7 +58,7 @@ exports.list = async (reqParams) => {
       $slice: [
        {
         $reduce: {
-         input: "$projects.teck_stack.skills",
+         input: "$projects.tech_stack.skills",
          initialValue: [],
          in: { $concatArrays: ["$$value", "$$this"] }
         }
