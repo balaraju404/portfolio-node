@@ -2,27 +2,42 @@ const mongoHelper = require("../../helpers/mongo-helper")
 const helper = require("../../helpers/helper")
 const { getObjectId } = require("../../utils/mongo-conn")
 
+const buildWhere = (params = {}) => {
+ const whr = { status: 1 }
+
+ if (params.user_id) whr.user_id = getObjectId(params.user_id)
+ if (params.portfolio_id) whr._id = getObjectId(params.portfolio_id)
+ if (params.portfolio_name) whr.portfolio_name = params.portfolio_name
+
+ if ("is_private" in params) whr.is_private = params.is_private
+ if ("status" in params) whr.status = params.status
+
+ return whr
+}
+
 exports.create = async (reqParams) => {
  try {
   const { user_id, portfolio_name, user_info } = reqParams
-  if (!helper.checkPortfolioName(portfolio_name)) throw Error("Portfolio name already exists")
+
+  const isAvailable = await helper.checkPortfolioName(portfolio_name)
+  if (!isAvailable) throw new Error("Portfolio name already exists")
 
   const insertDoc = {
    user_id: getObjectId(user_id),
-   portfolio_name: portfolio_name,
-   user_info: user_info,
+   portfolio_name,
+   user_info,
    is_private: 0,
    status: 1,
    created_at: new Date()
   }
 
-  if ("services" in reqParams) insertDoc["services"] = reqParams["services"]
-  if ("projects" in reqParams) insertDoc["projects"] = reqParams["projects"]
-  if ("skills" in reqParams) insertDoc["skills"] = reqParams["skills"]
-  if ("contact_info" in reqParams) insertDoc["contact_info"] = reqParams["contact_info"]
+  ["services", "projects", "skills", "contact_info"].forEach((field) => {
+   if (field in reqParams) {
+    insertDoc[field] = reqParams[field]
+   }
+  })
 
-  const result = await mongoHelper.insertOne(TBL_PORTFOLIOS, insertDoc)
-  return result
+  return await mongoHelper.insertOne(TBL_PORTFOLIOS, insertDoc)
  } catch (error) {
   throw error
  }
@@ -30,37 +45,37 @@ exports.create = async (reqParams) => {
 
 exports.list = async (reqParams) => {
  try {
-  const whr = { status: 1 }
-
-  if ("user_id" in reqParams) whr["user_id"] = getObjectId(reqParams["user_id"])
-  if ("portfolio_id" in reqParams) whr["_id"] = getObjectId(reqParams["portfolio_id"])
-  if ("portfolio_name" in reqParams) whr["portfolio_name"] = reqParams["portfolio_name"]
-  if ("is_private" in reqParams) whr["is_private"] = reqParams["is_private"]
-  if ("status" in reqParams) whr["status"] = reqParams["status"]
-
   const pipeline = [
-   { $match: whr },
-
+   {
+    $match: buildWhere(reqParams)
+   },
    {
     $project: {
      _id: 1,
      portfolio_name: 1,
      user_info: {
-      name: 1,
-      role: 1,
-      img: 1,
-      about: { $substr: ["$user_info.about", 0, 100] }
+      name: "$user_info.name",
+      role: "$user_info.role",
+      img: "$user_info.img",
+      about: { $substrCP: [{ $ifNull: ["$user_info.about", ""] }, 0, 100] }
      },
-     contact_info: { address: 1 },
-     projects_count: { $size: "$projects" },
-     services_count: { $size: "$services" },
+     contact_info: { address: "$contact_info.address" },
+     projects_count: { $size: { $ifNull: ["$projects", []] } },
+     services_count: { $size: { $ifNull: ["$services", []] } },
+
      skills: {
       $slice: [
        {
         $reduce: {
-         input: "$projects.tech_stack.skills",
+         input: {
+          $map: {
+           input: { $ifNull: ["$projects", []] },
+           as: "project",
+           in: { $ifNull: ["$$project.tech_stack.skills", []] }
+          }
+         },
          initialValue: [],
-         in: { $concatArrays: ["$$value", "$$this"] }
+         in: { $setUnion: ["$$value", "$$this"] }
         }
        },
        5
@@ -70,8 +85,7 @@ exports.list = async (reqParams) => {
    }
   ]
 
-  const result = await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
-  return result
+  return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
  } catch (error) {
   throw error
  }
@@ -79,20 +93,8 @@ exports.list = async (reqParams) => {
 
 exports.details = async (reqParams) => {
  try {
-  const whr = { status: 1 }
-
-  if ("user_id" in reqParams) whr["user_id"] = getObjectId(reqParams["user_id"])
-  if ("portfolio_id" in reqParams) whr["_id"] = getObjectId(reqParams["portfolio_id"])
-  if ("portfolio_name" in reqParams) whr["portfolio_name"] = reqParams["portfolio_name"]
-  if ("is_private" in reqParams) whr["is_private"] = reqParams["is_private"]
-  if ("status" in reqParams) whr["status"] = reqParams["status"]
-
-  const pipeline = [
-   { $match: whr }
-  ]
-
-  const result = await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
-  return result
+  const pipeline = [{ $match: buildWhere(reqParams) }]
+  return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
  } catch (error) {
   throw error
  }
