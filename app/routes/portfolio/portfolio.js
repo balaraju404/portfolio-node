@@ -56,11 +56,12 @@ routes.post("/create", createPortfolioValidationRules, (req, res, next) => {
  portfolioController.create(req, res, next)
 })
 
-routes.post("/list", (req, res, next) => {
- portfolioController.list(req, res, next)
+routes.post("/update", updatePortfolioValidationRules, (req, res, next) => {
+ handleValidationErrors(req, res, next)
+ portfolioController.update(req, res, next)
 })
 
-routes.post("/list", [], (req, res, next) => {
+routes.post("/list", (req, res, next) => {
  portfolioController.list(req, res, next)
 })
 
@@ -68,14 +69,8 @@ routes.get("/details/:portfolio_id", (req, res, next) => {
  portfolioController.details(req, res, next)
 })
 
-
 routes.post("/details", [], (req, res, next) => {
  portfolioController.details(req, res, next)
-})
-
-routes.post("/update", updatePortfolioValidationRules, (req, res, next) => {
- handleValidationErrors(req, res, next)
- portfolioController.update(req, res, next)
 })
 
 routes.delete("/remove/:portfolio_id", [], (req, res, next) => {
