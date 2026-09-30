@@ -2,139 +2,144 @@ const mongoHelper = require("../../helpers/mongo-helper")
 const helper = require("../../helpers/helper")
 const { getObjectId } = require("../../utils/mongo-conn")
 
-const buildWhere = (params = {}) => {
- const whr = { status: 1 }
- const normalized = params || {}
-
- if (normalized.user_id) whr.user_id = getObjectId(normalized.user_id)
- if (normalized.portfolio_id) whr._id = getObjectId(normalized.portfolio_id)
- if (normalized.portfolio_name) whr.portfolio_name = normalized.portfolio_name
-
- if ("is_private" in normalized) whr.is_private = Number(normalized.is_private)
- if ("status" in normalized) whr.status = Number(normalized.status)
-
- return whr
+/**
+ * Generate portfolio slug
+ */
+const generateSlug = (value = "") => {
+ return String(value)
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "")
 }
 
-exports.create = async (reqParams = {}) => {
+
+
+/**
+ * Build Mongo where condition
+ */
+const buildWhere = (params = {}) => {
+ const where = { status: 1 }
+
+ if (params.user_id) where.user_id = getObjectId(params.user_id)
+ if (params.portfolio_id) where._id = getObjectId(params.portfolio_id)
+ if (params.slug) where.slug = params.slug
+ if ("published" in params) where.published = Boolean(params.published)
+ if ("is_private" in params) where.is_private = Boolean(params.is_private)
+
+ return where
+}
+
+/**
+ * CREATE PORTFOLIO
+ */
+exports.create = async (params = {}) => {
  try {
-  const { user_id, portfolio_name, user_info } = reqParams
-  const cleanPortfolioName = String(portfolio_name || "").trim()
+  const { user_id, portfolio_name, sections = [], theme = {}, seo = {}, social_links = [], profile = {} } = params
 
   if (!user_id) throw new Error("User id is required")
-  if (!cleanPortfolioName) throw new Error("Portfolio name is required")
+  if (!portfolio_name) throw new Error("Portfolio name is required")
 
-  const isAvailable = await helper.checkPortfolioName(user_id, cleanPortfolioName)
-  if (!isAvailable) throw new Error("Portfolio name already exists")
+  const available = await helper.checkPortfolioName(user_id, portfolio_name)
+  if (!available) throw new Error("Portfolio name already exists")
 
-  const insertDoc = {
+  const doc = {
    user_id: getObjectId(user_id),
-   portfolio_name: cleanPortfolioName,
-   user_info,
-   is_private: 0,
+   portfolio_name: portfolio_name.trim(),
+   slug: generateSlug(portfolio_name),
+   profile,
+   sections,
+   theme,
+   seo,
+   social_links,
+   is_private: false,
+   published: false,
    status: 1,
-   created_at: new Date()
+   created_at: new Date(),
+   updated_at: new Date()
   }
-
-  ["services", "projects", "skills", "contact_info"].forEach((field) => {
-   if (field in reqParams) {
-    insertDoc[field] = reqParams[field]
-   }
-  })
-
-  return await mongoHelper.insertOne(TBL_PORTFOLIOS, insertDoc)
+  return await mongoHelper.insertOne(TBL_PORTFOLIOS, doc)
  } catch (error) {
   throw error
  }
 }
 
-exports.update = async (reqParams = {}) => {
+/**
+ * UPDATE PORTFOLIO
+ */
+exports.update = async (params = {}) => {
  try {
-  const { portfolio_id, user_id, portfolio_name, ...rest } = reqParams
-  const targetId = portfolio_id || reqParams._id
+  const { portfolio_id, user_id, portfolio_name } = params
+  if (!portfolio_id) throw new Error("Portfolio id is required")
 
-  if (!targetId) throw new Error("Portfolio id is required")
-
-  const updateDoc = { updated_at: new Date() }
-  const where = { _id: getObjectId(targetId), status: 1 }
+  const where = {
+   _id: getObjectId(portfolio_id),
+   status: 1
+  }
 
   if (user_id) where.user_id = getObjectId(user_id)
+
+  const update = { updated_at: new Date() }
 
   if (portfolio_name) {
-   const cleanPortfolioName = String(portfolio_name).trim()
-   const isAvailable = await helper.checkPortfolioName(user_id || where.user_id, cleanPortfolioName, targetId)
-   if (!isAvailable) throw new Error("Portfolio name already exists")
-   updateDoc.portfolio_name = cleanPortfolioName
+   const available = await helper.checkPortfolioName(user_id, portfolio_name, portfolio_id)
+   if (!available) throw new Error("Portfolio name already exists")
+
+   update.portfolio_name = portfolio_name.trim()
+   update.slug = generateSlug(portfolio_name)
   }
 
-  if ("user_info" in reqParams) updateDoc.user_info = reqParams.user_info
-  if ("is_private" in reqParams) updateDoc.is_private = Number(reqParams.is_private)
-  if ("status" in reqParams) updateDoc.status = Number(reqParams.status)
+  const allowedFields = [
+   "profile",
+   "sections",
+   "theme",
+   "seo",
+   "social_links",
+   "is_private",
+   "published"
+  ]
 
-  ["services", "projects", "skills", "contact_info"].forEach((field) => {
-   if (field in rest) {
-    updateDoc[field] = rest[field]
+  allowedFields.forEach(field => {
+   if (field in params) {
+    update[field] = params[field]
    }
   })
 
-  return await mongoHelper.updateOne(TBL_PORTFOLIOS, where, updateDoc, true)
+  return await mongoHelper.updateOne(TBL_PORTFOLIOS, where, update,)
  } catch (error) {
   throw error
  }
 }
 
-exports.remove = async (reqParams = {}) => {
+/**
+ * LIST PORTFOLIOS
+ */
+exports.list = async (params = {}) => {
+
  try {
-  const { portfolio_id, user_id } = reqParams
-  const where = { _id: getObjectId(portfolio_id || reqParams._id), status: 1 }
+  const page = Number(params.page || 1)
+  const limit = Number(params.limit || 20)
+  const skip = (page - 1) * limit
 
-  if (!where._id) throw new Error("Portfolio id is required")
-  if (user_id) where.user_id = getObjectId(user_id)
-
-  return await mongoHelper.updateOne(TBL_PORTFOLIOS, where, { status: 0, updated_at: new Date() }, true)
- } catch (error) {
-  throw error
- }
-}
-
-exports.list = async (reqParams = {}) => {
- try {
   const pipeline = [
-   {
-    $match: buildWhere(reqParams)
-   },
+   { $match: buildWhere(params) },
+   { $sort: { created_at: -1 } },
+   { $skip: skip },
+   { $limit: limit },
    {
     $project: {
-     _id: 1,
      portfolio_name: 1,
-     user_info: {
-      name: "$user_info.name",
-      role: "$user_info.role",
-      img: "$user_info.img",
-      about: { $substrCP: [{ $ifNull: ["$user_info.about", ""] }, 0, 100] }
+     slug: 1,
+     published: 1,
+     is_private: 1,
+     theme: 1,
+     profile: {
+      name: "$profile.name",
+      headline: "$profile.headline",
+      avatar: "$profile.avatar"
      },
-     contact_info: { address: "$contact_info.address" },
-     projects_count: { $size: { $ifNull: ["$projects", []] } },
-     services_count: { $size: { $ifNull: ["$services", []] } },
-
-     skills: {
-      $slice: [
-       {
-        $reduce: {
-         input: {
-          $map: {
-           input: { $ifNull: ["$projects", []] },
-           as: "project",
-           in: { $ifNull: ["$$project.tech_stack.skills", []] }
-          }
-         },
-         initialValue: [],
-         in: { $setUnion: ["$$value", "$$this"] }
-        }
-       },
-       5
-      ]
-     }
+     sections_count: { $size: { $ifNull: ["$sections", []] } },
+     created_at: 1
     }
    }
   ]
@@ -145,10 +150,82 @@ exports.list = async (reqParams = {}) => {
  }
 }
 
-exports.details = async (reqParams = {}) => {
+/**
+ * GET PORTFOLIO DETAILS
+ */
+exports.details = async (params = {}) => {
  try {
-  const pipeline = [{ $match: buildWhere(reqParams) }]
+  const pipeline = [{ $match: buildWhere(params) }]
   return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
+ } catch (error) {
+  throw error
+ }
+}
+
+/**
+ * PUBLIC PORTFOLIO VIEW
+ */
+exports.publicDetails = async (params = {}) => {
+ try {
+  const pipeline = [
+   {
+    $match: {
+     slug: params.slug,
+     published: true,
+     status: 1
+    }
+   },
+   {
+    $project: {
+     _id: 0,
+     portfolio_name: 1,
+     profile: 1,
+     sections: 1,
+     theme: 1,
+     seo: 1,
+     social_links: 1
+    }
+   }
+  ]
+
+  return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
+ } catch (error) {
+  throw error
+ }
+}
+
+/**
+ * PUBLISH PORTFOLIO
+ */
+exports.publish = async (params = {}) => {
+ try {
+
+  if (!params.portfolio_id) throw new Error("Portfolio id required")
+
+  return await mongoHelper.updateOne(
+   TBL_PORTFOLIOS,
+   { _id: getObjectId(params.portfolio_id), status: 1 },
+   { published: Boolean(params.published), updated_at: new Date() }
+  )
+ } catch (error) {
+  throw error
+ }
+}
+
+/**
+ * REMOVE PORTFOLIO
+ * Soft Delete
+ */
+exports.remove = async (params = {}) => {
+ try {
+
+  if (!params.portfolio_id) throw new Error("Portfolio id required")
+
+  return await mongoHelper.updateOne(
+   TBL_PORTFOLIOS,
+   { _id: getObjectId(params.portfolio_id), status: 1 },
+   { status: 0, updated_at: new Date() }
+  )
  } catch (error) {
   throw error
  }
