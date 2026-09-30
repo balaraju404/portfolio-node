@@ -1,50 +1,36 @@
 {
- "_id": "ObjectId",
- "name": "Skills",
- "type": "skills",
- "description": "User technical skills section",
- "icon": "skills.png",
+ "name": "Projects",
+ "type": "projects",
+ "description": "Portfolio projects section",
  "fields": [
   {
    "key": "title",
-   "label": "Section Title",
+   "label": "Project Title",
    "type": "text",
-   "required": true,
-   "default_value": "My Skills",
-   "validation": {
-    "max_length": 100
-   }
+   "required": true
   },
   {
-   "key": "description",
-   "label": "Description",
-   "type": "textarea",
-   "required": false
-  },
-  {
-   "key": "skills",
-   "label": "Skills",
+   "key": "items",
+   "label": "Projects",
    "type": "repeatable",
    "required": true,
    "children": [
     {
      "key": "name",
-     "label": "Skill Name",
+     "label": "Project Name",
      "type": "text"
     },
     {
-     "key": "level",
-     "label": "Skill Level",
-     "type": "number",
-     "validation": {
-      "min": 0,
-      "max": 100
-     }
+     "key": "image",
+     "label": "Project Image",
+     "type": "image"
     }
    ]
   }
  ],
- "status": 1,
- "created_at": "new Date()",
- "updated_at": "new Date()"
+ "settings": {
+  "sortable": true,
+  "multiple": true,
+  "removable": true
+ }
 }
