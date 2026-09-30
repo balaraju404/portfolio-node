@@ -1,6 +1,6 @@
 const routes = require("express").Router()
 const { body, validationResult } = require("express-validator")
-const controller = require("../../controller/section-master/section-master")
+const controller = require("../controller/section-master")
 
 const validateRequest = (req, res, next) => {
  const errors = validationResult(req)
