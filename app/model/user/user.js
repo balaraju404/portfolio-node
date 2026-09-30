@@ -1,4 +1,5 @@
 const mongoHelper = require("../../helpers/mongo-helper")
+const { DatabaseCollections } = require("../../utils/database-collections")
 const { getObjectId } = require("../../utils/mongo-conn")
 
 exports.updateUser = async (reqParams) => {
@@ -9,7 +10,7 @@ exports.updateUser = async (reqParams) => {
   if ("password" in reqParams) updateObj["password"] = pwdHashHelper.hashPassword(reqParams["password"])
 
   const whr = { _id: getObjectId(reqParams["user_id"]) }
-  const result = await mongoHelper.updateOne(TBL_USERS, updateObj, whr)
+  const result = await mongoHelper.updateOne(DatabaseCollections.USERS, updateObj, whr)
   return result
  } catch (error) {
   throw error

@@ -1,6 +1,7 @@
 const mongoHelper = require("../../helpers/mongo-helper")
 const pwdHashHelper = require("../../helpers/pwd-hashing")
 const helper = require("../../helpers/helper")
+const { DatabaseCollections } = require("../../utils/database-collections")
 
 exports.loginCheck = async (reqParams) => {
  try {
@@ -11,7 +12,7 @@ exports.loginCheck = async (reqParams) => {
    { $addFields: { user_id: "$_id" } },
    { $project: { _id: 0 } }
   ]
-  const result = await mongoHelper.getOne(TBL_USERS, pipeline)
+  const result = await mongoHelper.getOne(DatabaseCollections.USERS, pipeline)
 
   if (Object.keys(result).length == 0) throw Error("Invalid loginname")
   const checkPwd = await pwdHashHelper.checkPassword(password, result["password"])
@@ -40,7 +41,7 @@ exports.createUser = async (reqParams) => {
    is_admin: 0,
    created_at: new Date()
   }
-  const result = await mongoHelper.insertOne(TBL_USERS, insertObj)
+  const result = await mongoHelper.insertOne(DatabaseCollections.USERS, insertObj)
   return result
  } catch (error) {
   throw error

@@ -20,6 +20,8 @@ async function connectDB() {
 
  try {
   const connUrl = buildMongoUrl()
+  console.log(connUrl);
+  
   mongoConn = mongoose.createConnection(connUrl, {
    useNewUrlParser: true,
    useUnifiedTopology: true,

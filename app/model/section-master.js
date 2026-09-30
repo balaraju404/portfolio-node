@@ -1,7 +1,8 @@
 const mongoHelper = require("../helpers/mongo-helper")
+const { DatabaseCollections } = require("../utils/database-collections")
 const { getObjectId } = require("../utils/mongo-conn")
 
-const COLLECTION = TBL_SECTION_MASTER
+const COLLECTION = DatabaseCollections.SECTION_MASTER
 
 const buildWhere = (params = {}) => {
  const where = { status: 1 }

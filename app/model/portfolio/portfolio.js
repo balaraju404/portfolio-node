@@ -1,6 +1,7 @@
 const mongoHelper = require("../../helpers/mongo-helper")
 const helper = require("../../helpers/helper")
 const { getObjectId } = require("../../utils/mongo-conn")
+const { DatabaseCollections } = require("../../utils/database-collections")
 
 /**
  * Generate portfolio slug
@@ -58,7 +59,7 @@ exports.create = async (params = {}) => {
    created_at: new Date(),
    updated_at: new Date()
   }
-  return await mongoHelper.insertOne(TBL_PORTFOLIOS, doc)
+  return await mongoHelper.insertOne(DatabaseCollections.PORTFOLIOS, doc)
  } catch (error) {
   throw error
  }
@@ -105,7 +106,7 @@ exports.update = async (params = {}) => {
    }
   })
 
-  return await mongoHelper.updateOne(TBL_PORTFOLIOS, where, update,)
+  return await mongoHelper.updateOne(DatabaseCollections.PORTFOLIOS, where, update,)
  } catch (error) {
   throw error
  }
@@ -144,7 +145,7 @@ exports.list = async (params = {}) => {
    }
   ]
 
-  return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
+  return await mongoHelper.getDetails(DatabaseCollections.PORTFOLIOS, pipeline)
  } catch (error) {
   throw error
  }
@@ -156,7 +157,7 @@ exports.list = async (params = {}) => {
 exports.details = async (params = {}) => {
  try {
   const pipeline = [{ $match: buildWhere(params) }]
-  return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
+  return await mongoHelper.getDetails(DatabaseCollections.PORTFOLIOS, pipeline)
  } catch (error) {
   throw error
  }
@@ -188,7 +189,7 @@ exports.publicDetails = async (params = {}) => {
    }
   ]
 
-  return await mongoHelper.getDetails(TBL_PORTFOLIOS, pipeline)
+  return await mongoHelper.getDetails(DatabaseCollections.PORTFOLIOS, pipeline)
  } catch (error) {
   throw error
  }
@@ -203,7 +204,7 @@ exports.publish = async (params = {}) => {
   if (!params.portfolio_id) throw new Error("Portfolio id required")
 
   return await mongoHelper.updateOne(
-   TBL_PORTFOLIOS,
+   DatabaseCollections.PORTFOLIOS,
    { _id: getObjectId(params.portfolio_id), status: 1 },
    { published: Boolean(params.published), updated_at: new Date() }
   )
@@ -222,7 +223,7 @@ exports.remove = async (params = {}) => {
   if (!params.portfolio_id) throw new Error("Portfolio id required")
 
   return await mongoHelper.updateOne(
-   TBL_PORTFOLIOS,
+   DatabaseCollections.PORTFOLIOS,
    { _id: getObjectId(params.portfolio_id), status: 1 },
    { status: 0, updated_at: new Date() }
   )

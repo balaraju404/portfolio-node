@@ -24,6 +24,15 @@ exports.update = async (req, res, next) => {
  }
 }
 
+exports.list = async (req, res, next) => {
+ try {
+  const result = await portfolioModel.list(params(req))
+  res.json({ status: true, data: result })
+ } catch (e) {
+  next(e)
+ }
+}
+
 exports.details = async (req, res, next) => {
  try {
   const result = await portfolioModel.details(params(req))
@@ -46,6 +55,15 @@ exports.publish = async (req, res, next) => {
  try {
   await portfolioModel.update({ portfolio_id: req.body.portfolio_id, published: true })
   res.json({ status: true, message: "Portfolio published" })
+ } catch (e) {
+  next(e)
+ }
+}
+
+exports.remove = async (req, res, next) => {
+ try {
+  const result = await portfolioModel.remove(params(req))
+  res.json({ status: true, data: result })
  } catch (e) {
   next(e)
  }
