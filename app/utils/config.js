@@ -1,12 +1,12 @@
 require("dotenv").config()
 
-global.PORT = process.env.PORT
-global.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+global.PORT = process.env.PORT || 3000
+global.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || ""
 
-global.MONGO_DB_USERNAME = process.env.MONGO_DB_USERNAME
-global.MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD
-global.MONGO_DB_HOST = process.env.MONGO_DB_HOST
-global.MONGO_DB_NAME = process.env.MONGO_DB_NAME
+global.MONGO_DB_USERNAME = process.env.MONGO_DB_USERNAME || ""
+global.MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD || ""
+global.MONGO_DB_HOST = process.env.MONGO_DB_HOST || ""
+global.MONGO_DB_NAME = process.env.MONGO_DB_NAME || "portfolio"
 
 // Status codes
 global.SUCCESS_CODE = 200
